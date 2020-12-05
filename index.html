@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+</head>
+<body>
+
+  <div style='max-width:500px;'>
+    <canvas id="myChart" width="400" height="400"></canvas>
+  </div>  
+  <div style='background-color:#DDDDFF; padding:5px;'>
+    <div id='results'></div>
+  </div>
+  
+  <div>
+    <div>
+      <span>概要と参考文献</span>
+      <ul>
+        <li>「<a hred='https://www.pokemon.co.jp/ex/sword_shield/' target='_blank'>ポケットモンスター　ソード・シールド</a>」というゲーム作品で遊ぶための補助ツールです。使われている用語等含めて非公式なものです。</li>
+        <li>ポケットモンスター・ポケモン・Pokémonは任天堂・クリーチャーズ・ゲームフリークの登録商標です。</li>
+        <li>数値や計算方法はポケモンWiki（<a href='https://wiki.ポケモン.com/wiki/' target='_blank'>https://wiki.ポケモン.com/wiki/</a>を参照しています。</li>
+        <li>グラフは<a href='https://www.chartjs.org/' target='_blank'>Chart.js</a>を利用。</li>
+        <li>Lvは50で固定。</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script>
+  
+  /****************************************
+  
+  データ
+  
+  切片の引用元
+  https://wiki.ポケモン.com/wiki/%E3%82%B9%E3%83%86%E3%83%BC%E3%82%BF%E3%82%B9
+  種族値の引用元
+  https://wiki.ポケモン.com/wiki/%E3%83%AC%E3%82%B8%E3%82%AE%E3%82%AC%E3%82%B9
+  
+  ****************************************/
+  
+  const baseVal = [60,5,5,5,5,5]; //切片：全ポケモン毎に固定
+  const shuzokuVal = [110,160,110,80,110,100]; //種族値：ポケモンの種類ごとに固定
+  const kotaiVal = [31,31,31,31,31,31]; //個体値：個体ごとに変化
+  const doryokuVal = [252,0,4,0,252,0]; //努力値：個体ごとに変化
+  const seikakuHosei = [1.0,1.0,1.0,0.9,1.1,1.0]; //性格補正：個体ごとに変化
+  const targetLv = 50; //レベル：50で固定
+  
+  
+  
+  /*****************************************
+  
+  引用元
+  https://wiki.ポケモン.com/wiki/%E3%82%B9%E3%83%86%E3%83%BC%E3%82%BF%E3%82%B9
+  
+  最大HP
+    (種族値×2+個体値+努力値÷4)×レベル÷100+レベル+10
+  こうげき・ぼうぎょ・とくこう・とくぼう・すばやさ
+    {(種族値×2+個体値+努力値÷4)×レベル÷100+5}×せいかく補正
+  
+  *****************************************/
+  
+  const plusArray = (array1, val) => {
+    const total = [0,0,0,0,0,0];
+    
+    if(Array.isArray(val)){
+      for(i in total){
+        total[i] = array1[i] + val[i];
+      }
+    }else{
+      for(i in total){
+        total[i] = array1[i] + val;
+      }
+    }
+    
+    return total;
+  }
+  
+  const multiArray = (array1, val) => {
+    const total = [0,0,0,0,0,0];
+    
+    if(Array.isArray(val)){
+      for(i in total){
+        total[i] = array1[i] * val[i];
+      }
+    }else{
+      for(i in total){
+        total[i] = array1[i] * val;
+      }
+    }
+    
+    return total;
+  }
+  
+  
+  const convertDoryoku = (data) => {
+    
+    const total = [0,0,0,0,0,0];
+    
+    for(i in data){
+      const d_1 = Math.floor(data[i] / 4);
+      total[i] = total[i] + d_1;
+    }
+    
+    return total;
+  
+  }
+  
+  const convertSyuzoku = (data) => {
+    
+    const total = [0,0,0,0,0,0];
+    
+    for(i in data){
+      const d_1 = Math.floor(data[i] * 2);
+      total[i] = total[i] + d_1;
+    }
+    
+    return total;
+  
+  }
+  
+  const calcZissu = (baseVal, shuzokuVal, doryokuVal, kotaiVal) => {
+    const total = [0,0,0,0,0,0];
+    
+    const doryokuValCov = convertDoryoku(doryokuVal);
+    const syuzokuValCov = convertSyuzoku(shuzokuVal);
+    
+    for(i in total){
+      total[i] = baseVal[i] + Math.floor((syuzokuValCov[i] + kotaiVal[i] + doryokuValCov[i])*(targetLv /100)); 
+      //Lv.50で考える
+    }
+    
+    return total;
+  
+  }
+  
+  
+  const zissuVal = calcZissu(baseVal, shuzokuVal, doryokuVal, kotaiVal);
+  console.log(zissuVal);
+  
+  
+  const data = {
+    "labels": ["H", "A", "B", "C", "D", "S"],
+    "datasets":[{
+      "label": "ベース",
+      "data": baseVal,
+      "borderColor": "rgb(200,200,200)",
+      "backgroundColor": "rgb(200,200,200,1)"
+    },{
+      "label": "種族値",
+      "data": multiArray(convertSyuzoku(shuzokuVal), targetLv/100),
+      "borderColor": "rgb(0,255,0)",
+      "backgroundColor": "rgb(0,255,0,1)"
+    },{
+      "label": "個体値",
+      "data": multiArray(kotaiVal, targetLv/100),
+      "borderColor": "rgb(0,0,255)",
+      "backgroundColor": "rgb(0,0,255,1)"
+    },{
+      "label": "努力値",
+      "data": multiArray(convertDoryoku(doryokuVal), targetLv/100), //努力値は4で割った
+      "borderColor": "rgb(255,0,0)",
+      "backgroundColor": "rgb(255,0,0,1)"
+    },{
+      "label": "実数値",
+      "data": zissuVal,
+      "borderColor": "rgb(255,155,0)",
+      "backgroundColor": "rgb(0,0,0,0)"
+    }]
+  }
+  
+  //積み上げる
+  const stackdata = {
+    "labels": ["H", "A", "B", "C", "D", "S"],
+    "datasets":[{
+      "label": "ベース",
+      "data": baseVal,
+      "borderColor": "rgb(100,100,100,0.5)",
+      "backgroundColor": "rgb(100,100,100,0)"
+    },{
+      "label": "種族値",
+      "data": multiArray(convertSyuzoku(shuzokuVal), targetLv/100),
+      "borderColor": "rgb(0,255,0,0.5)",
+      "backgroundColor": "rgb(0,255,0,0)"
+    },{
+      "label": "個体値",
+      "data": multiArray(kotaiVal, targetLv/100),
+      "borderColor": "rgb(0,0,255,0.5)",
+      "backgroundColor": "rgb(0,0,255,0)"
+    },{
+      "label": "努力値",
+      "data": multiArray(convertDoryoku(doryokuVal), targetLv/100), //努力値は4で割った
+      "borderColor": "rgb(255,0,0,0.5)",
+      "backgroundColor": "rgb(255,0,0,0)"
+    }]
+  }
+  
+  let stacks = [0,0,0,0,0,0];
+  
+  stackdata.datasets.forEach( sets => {
+    stacks = plusArray(sets.data, stacks);
+    sets.data = stacks;
+  })
+  
+  //性格補正を考慮した実数地
+  const zissuWithSeikakuVal = multiArray(zissuVal, seikakuHosei);
+  
+  console.log(zissuWithSeikakuVal);
+  
+  for(i in zissuWithSeikakuVal){
+    zissuWithSeikakuVal[i] = Math.floor(zissuWithSeikakuVal[i]);
+  }
+  
+  console.log(zissuWithSeikakuVal);
+  
+  const zissuWithSeikaku = {
+      "label": "性格補正",
+      "data": zissuWithSeikakuVal,
+      "borderColor": "rgb(255,155,0)",
+      "backgroundColor": "rgb(0,0,0,0)"
+  };
+  
+  stackdata.datasets.push(zissuWithSeikaku);
+  
+  console.log(data);
+  console.log(stackdata);
+  
+  //努力値までの積算＝小数点以下切捨て前の実数値（0.5なら「すばらしい」で妥協可）
+  document.getElementById("results").innerHTML = "小数点以下切捨て前の実数値（端数の0.5があれば個体値「すばらしい」で妥協可）<br>" 
+                                               + JSON.stringify(stackdata.datasets[3].data) + "<br>"
+                                               + "実数値（性格補正込み）<br>"
+                                               + JSON.stringify(stackdata.datasets[4].data);
+  
+  //グラフの描画
+  var ctx = document.getElementById('myChart').getContext('2d');
+  var myRadarChart = new Chart(ctx, {
+      type: 'radar',
+      data: stackdata,
+      options: {
+        title: {
+          display: true,
+          text: 'ポケモン実数値に占める3値の割合', 
+          padding: 5
+        }
+        /*
+        ,
+        scales: {
+            xAxes: [{
+                stacked: true
+            }],
+            yAxes: [{
+                stacked: true
+            }]
+        }
+        */
+      }
+  });
+
+
+  </script>
+</body>
+</html>
