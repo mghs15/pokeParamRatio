@@ -233,8 +233,8 @@
                                                + JSON.stringify(stackdata.datasets[4].data);
   
   //グラフの描画
-  var ctx = document.getElementById('myChart').getContext('2d');
-  var myRadarChart = new Chart(ctx, {
+  const ctx = document.getElementById('myChart').getContext('2d');
+  const myRadarChart = new Chart(ctx, {
       type: 'radar',
       data: stackdata,
       options: {
